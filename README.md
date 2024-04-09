@@ -6,4 +6,4 @@ A dash app that will be used to visualize some of the energy usage data for my h
 This dash app takes in an energy usage XML file in accordance with the Green Button standard and displays some analytics graphs about energy usage. There is currently
 only one graph in the dashboard and it is not a polished presentation. The graph is below.
 
-![Dash First Graph](image.png)
+![Dash First Graph](basic_graph.png)
