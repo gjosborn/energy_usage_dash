@@ -1,30 +1,34 @@
+import dash
 from dash import Dash, html, dash_table, dcc, Output, Input
+from dash_bootstrap_components.themes import BOOTSTRAP
 import pandas as pd
 import plotly.express as px
 
 df = pd.read_csv('energy_usage.csv')
 
-app = Dash(__name__)
+month_dict = {
+    1: 'January',
+    2: 'February',
+    3: 'March',
+    4: 'April',
+    5: 'May',
+    6: 'June',
+    7: 'July',
+    8: 'August',
+    9: 'September',
+    10: 'October',
+    11: 'November',
+    12: 'December'
+}
 
+app = Dash(external_stylesheets=[BOOTSTRAP], use_pages=True, title='Energy Usage Dashboard')
+    
 app.layout = html.Div([
-    html.H1("Hourly Sum of Values"),
-
     # Dropdown menu for selecting 'From' month
     dcc.Dropdown(
         id='from-month-dropdown',
         options=[
-            {'label': 'January', 'value': 1},
-            {'label': 'February', 'value': 2},
-            {'label': 'March', 'value': 3},
-            {'label': 'April', 'value': 4},
-            {'label': 'May', 'value': 5},
-            {'label': 'June', 'value': 6},
-            {'label': 'July', 'value': 7},
-            {'label': 'August', 'value': 8},
-            {'label': 'September', 'value': 9},
-            {'label': 'October', 'value': 10},
-            {'label': 'November', 'value': 11},
-            {'label': 'December', 'value': 12},
+            {'label': month_dict[month], 'value': month} for month in range(1, 13)
         ],
         value=df['Month'].min(),
         multi=False,
@@ -35,7 +39,7 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='to-month-dropdown',
         options=[
-            {'label': month, 'value': month} for month in df['Month'].unique()
+            {'label': month_dict[month], 'value': month} for month in range(1, 13)
         ],
         value=df['Month'].max(),
         multi=False,
@@ -44,6 +48,7 @@ app.layout = html.Div([
 
     # Bar graph displaying the sum of 'Value' over the hour of the day
     dcc.Graph(id='hourly-bar-graph'),
+    dash.page_container
 ])
 
 
@@ -53,6 +58,7 @@ app.layout = html.Div([
     [Input('from-month-dropdown', 'value'),
      Input('to-month-dropdown', 'value')]
 )
+
 def update_graph(from_month, to_month):
     filtered_df = df[(df['Month'] >= from_month) & (df['Month'] <= to_month)]
 
@@ -65,13 +71,13 @@ def update_graph(from_month, to_month):
             {'x': hourly_sum_df['HourOfDay'], 'y': hourly_sum_df['Value'], 'type': 'bar', 'name': 'Hourly Sum'},
         ],
         'layout': {
-            'title': f'Sum of Value Over Hour of the Day ({from_month} to {to_month})',
+            'title': f'Sum of Value Over Hour of the Day ({month_dict[from_month]} to {month_dict[to_month]})',
             'xaxis': {'title': 'Hour of the Day'},
             'yaxis': {'title': 'Sum of Value'},
         }
     }
     return figure
-
+    
 
 if __name__ == '__main__':
     app.run(debug=True)
