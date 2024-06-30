@@ -3,8 +3,7 @@ from dash import Dash, html, dash_table, dcc, Output, Input
 from dash_bootstrap_components.themes import BOOTSTRAP
 import pandas as pd
 import plotly.express as px
-
-df = pd.read_csv('energy_usage.csv')
+from components.navbar import create_navbar
 
 month_dict = {
     1: 'January',
@@ -21,63 +20,18 @@ month_dict = {
     12: 'December'
 }
 
-app = Dash(external_stylesheets=[BOOTSTRAP], use_pages=True, title='Energy Usage Dashboard')
-    
+df = pd.read_csv('energy_usage.csv')
+app = Dash(__name__, external_stylesheets=[BOOTSTRAP], use_pages=True, title='Energy Usage Dashboard')
+
+from pages import analytics
+analytics.page_load(app, df, month_dict)
+
+
 app.layout = html.Div([
-    # Dropdown menu for selecting 'From' month
-    dcc.Dropdown(
-        id='from-month-dropdown',
-        options=[
-            {'label': month_dict[month], 'value': month} for month in range(1, 13)
-        ],
-        value=df['Month'].min(),
-        multi=False,
-        style={'width': '50%'}
-    ),
-
-    # Dropdown menu for selecting 'To' month
-    dcc.Dropdown(
-        id='to-month-dropdown',
-        options=[
-            {'label': month_dict[month], 'value': month} for month in range(1, 13)
-        ],
-        value=df['Month'].max(),
-        multi=False,
-        style={'width': '50%'}
-    ),
-
-    # Bar graph displaying the sum of 'Value' over the hour of the day
-    dcc.Graph(id='hourly-bar-graph'),
+    create_navbar(),
     dash.page_container
 ])
 
-
-# Define callback to update the graph based on dropdown selections
-@app.callback(
-    Output('hourly-bar-graph', 'figure'),
-    [Input('from-month-dropdown', 'value'),
-     Input('to-month-dropdown', 'value')]
-)
-
-def update_graph(from_month, to_month):
-    filtered_df = df[(df['Month'] >= from_month) & (df['Month'] <= to_month)]
-
-    # Group by HourOfDay and sum the 'Value'
-    hourly_sum_df = filtered_df.groupby('HourOfDay')['Value'].sum().reset_index()
-
-    # Create a bar graph
-    figure = {
-        'data': [
-            {'x': hourly_sum_df['HourOfDay'], 'y': hourly_sum_df['Value'], 'type': 'bar', 'name': 'Hourly Sum'},
-        ],
-        'layout': {
-            'title': f'Sum of Value Over Hour of the Day ({month_dict[from_month]} to {month_dict[to_month]})',
-            'xaxis': {'title': 'Hour of the Day'},
-            'yaxis': {'title': 'Sum of Value'},
-        }
-    }
-    return figure
-    
 
 if __name__ == '__main__':
     app.run(debug=True)

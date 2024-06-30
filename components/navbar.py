@@ -5,19 +5,13 @@ import dash_bootstrap_components as dbc
 def create_navbar():
     return dbc.NavbarSimple(
         children=[
-            dbc.DropdownMenu(
-                children=[
-                    dbc.NavItem(dbc.NavLink("Home", href="/")),
-                    dbc.NavItem(dbc.NavLink("Analytics", href="/analytics")),
-                    dbc.NavItem(dbc.NavLink("Forecasting", href="/forecasting")),
-                ],
-                nav=True,
-                id_navbar=True,
-                label="More",
-            ),
+            dbc.NavItem(dbc.NavLink("Home", href="/")),
+            dbc.NavItem(dbc.NavLink("Analytics", href="/analytics")),
+            dbc.NavItem(dbc.NavLink("Forecasting", href="/forecasting")),
         ],
-        brand="NavbarSimple",
-        brand_href="#",
-        color="primary",
+    
+        brand="Energy Consumption Analytics",
+        brand_href="/",
+        color="slategray",
         dark=True,
 )
