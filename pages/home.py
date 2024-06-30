@@ -34,28 +34,36 @@ def layout():
                 'margin': '10px',
                 'align-content': 'center',
             },
-            # Allow multiple files to be uploaded
             multiple=False
         ),
         html.Button('Upload', id='upload-button', n_clicks=0),
         html.Div(id='output-data-upload'),
+        # dcc.Store(id='upload-data-store', storage_type='session')
     ])
 
 @callback(
     Output('output-data-upload', 'children'),
+    Output('upload-data-store', 'data'),
     Input('upload-button', 'n_clicks'),
     State('upload-data', 'contents'),
     State('upload-data', 'filename'),
     State('upload-data', 'last_modified')
 )
 def update_output(n_clicks, contents, filename, last_modified):
-    # if there are contents and the button has been clicked, parse the contents
-    # and return in a data table
     if n_clicks > 0 and contents is not None:
         children = parse_contents(contents, filename, last_modified)
-        return children
-    # If there are no contents or the button has not been clicked, return an empty Div
-    return html.Div()
+        
+        # Store the file data
+        stored_data = {
+            'contents': contents,
+            'filename': filename,
+            'last_modified': last_modified
+        }
+        
+        return children, stored_data
+    
+    # If there are no contents or the button has not been clicked, return empty values
+    return html.Div(), dash.no_update  # Use dash.no_update here
 
 def parse_contents(contents, filename, last_modified):
     content_type, content_string = contents.split(',')

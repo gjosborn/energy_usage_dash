@@ -1,70 +1,57 @@
-
-import dash
-from dash import Dash, html, dash_table, dcc, Output, Input
-from dash_bootstrap_components.themes import BOOTSTRAP
+from dash import html, dcc, Output, Input, clientside_callback, ClientsideFunction
 import pandas as pd
-import plotly.express as px
+import json
 
-#TODO: Add Error Checking to ensure months and years are valid (beginning not after end, etc.)
 class TotalUsageBarChart:
-    def __init__(self, app: Dash, df: pd.DataFrame, month_dict: dict):
-        self.app = app
+    def __init__(self, df: pd.DataFrame):
         self.df = df
-        self.month_dict = month_dict
+        self.month_dict = {
+            1: 'January', 2: 'February', 3: 'March', 4: 'April',
+            5: 'May', 6: 'June', 7: 'July', 8: 'August',
+            9: 'September', 10: 'October', 11: 'November', 12: 'December'
+        }
         self.layout = self.create_layout()
-        self.register_callbacks(df)
-        
+
     def create_layout(self):
         return html.Div([
-            # Dropdown menu for selecting 'From' month
+            dcc.Store(id='chart-data-store', data=self.df.to_dict('records')),
             dcc.Dropdown(
                 id='from-month-dropdown',
                 options=[
                     {'label': self.month_dict[month], 'value': month} for month in range(1, 13)
                 ],
-                value=self.df['Month'].min(),
+                value=self.df['Month'].min() if 'Month' in self.df.columns and not self.df.empty else 1,
                 multi=False,
                 style={'width': '50%'}
             ),
-
-            # Dropdown menu for selecting 'To' month
             dcc.Dropdown(
                 id='to-month-dropdown',
                 options=[
                     {'label': self.month_dict[month], 'value': month} for month in range(1, 13)
                 ],
-                value=self.df['Month'].max(),
+                value=self.df['Month'].max() if 'Month' in self.df.columns and not self.df.empty else 12,
                 multi=False,
                 style={'width': '50%'}
             ),
-
-            # Bar graph displaying the sum of 'Value' over the hour of the day
-            dcc.Graph(id='hourly-bar-graph')
+            dcc.Graph(id='hourly-bar-graph'),
+            html.Div(id='chart-debug-output')  # Add this for debugging
         ])
 
-
-    def register_callbacks(self, df):
-        @self.app.callback(
+    def register_callbacks(self, app):
+        clientside_callback(
+            ClientsideFunction(
+                namespace='clientside',
+                function_name='update_graph'
+            ),
             Output('hourly-bar-graph', 'figure'),
             [Input('from-month-dropdown', 'value'),
-            Input('to-month-dropdown', 'value')]
+             Input('to-month-dropdown', 'value'),
+             Input('chart-data-store', 'data')]
         )
 
-        def update_graph(from_month, to_month):
-            filtered_df = df[(df['Month'] >= from_month) & (df['Month'] <= to_month)]
-
-            # Group by HourOfDay and sum the 'Value'
-            hourly_sum_df = filtered_df.groupby('HourOfDay')['Value'].sum().reset_index()
-
-            # Create a bar graph
-            figure = {
-                'data': [
-                    {'x': hourly_sum_df['HourOfDay'], 'y': hourly_sum_df['Value'], 'type': 'bar', 'name': 'Hourly Sum'},
-                ],
-                'layout': {
-                    'title': f'Sum of Value Over Hour of the Day ({self.month_dict[from_month]} to {self.month_dict[to_month]})',
-                    'xaxis': {'title': 'Hour of the Day'},
-                    'yaxis': {'title': 'Sum of Value'},
-                }
-            }
-            return figure
+        @app.callback(
+            Output('chart-debug-output', 'children'),
+            [Input('chart-data-store', 'data')]
+        )
+        def debug_data(data):
+            return f"Data in store: {len(data)} rows. First row: {json.dumps(data[0] if data else {})}"

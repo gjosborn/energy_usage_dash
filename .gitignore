@@ -1,4 +1,4 @@
 venv/
 .idea/
-energy_usage.*
+energy_usage*
 __pycache__/
